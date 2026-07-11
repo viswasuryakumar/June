@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tasks"],
+  "properties": {
+    "tasks": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task_id", "role", "title", "prompt", "files", "acceptance_criteria", "verification_command", "estimated_minutes"],
+        "properties": {
+          "task_id": {"type": "string"},
+          "role": {"enum": ["developer", "bug-fixer"]},
+          "title": {"type": "string"},
+          "prompt": {"type": "string"},
+          "files": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+          "acceptance_criteria": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+          "verification_command": {"type": "string"},
+          "estimated_minutes": {"type": "integer", "minimum": 1, "maximum": 8},
+          "dependencies": {"type": "array", "items": {"type": "string"}},
+          "parent_task": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}

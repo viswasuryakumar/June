@@ -1,4 +1,4 @@
-.PHONY: setup lint format test run dry-run discover-only resume-hitl playwright-install pre-commit-install
+.PHONY: setup lint format test run dry-run discover-only resume-hitl playwright-install pre-commit-install dev-loop dev-loop-once dev-loop-dry-run
 
 VENV := .venv
 PYTHON := $(VENV)/bin/python
@@ -54,3 +54,14 @@ discover-only:
 ## Usage: make resume-hitl TICKET_ID=abc123
 resume-hitl:
 	$(PYTHON) -m src.cli.main resume-hitl $(TICKET_ID)
+
+## Four-agent development supervisor. Continuous live execution requires
+## JUNE_DEVLOOP_ENABLE=1 and a clean, synchronized main branch.
+dev-loop:
+	$(PYTHON) -m devloop run
+
+dev-loop-once:
+	$(PYTHON) -m devloop once
+
+dev-loop-dry-run:
+	$(PYTHON) -m devloop dry-run

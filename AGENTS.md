@@ -71,9 +71,11 @@ For every task, record:
 If a task is still in progress, add an entry marked as in-progress with the blocker and the next action.
 
 ## Multi-Agent Roles
-Two independent agents operate on this repo concurrently, split by lane rather than by task slice. Each owns its lane end-to-end — including proposing and adding new ideas beyond the literal spec text where they improve the product — and neither silently edits the other's files.
+Four roles operate in a fixed development loop, with implementation and review kept independent.
 
-- **Claude (implementation agent)** — builds and fixes the pipeline. Owns `src/`, `config/`, `selectors/`, and unit/component tests: implements features, resolves findings raised in `review.md`, and writes focused tests for individual functions, classes, modules, and bounded subsystem integrations. Existing flat `tests/test_*.py` files remain Claude-owned; new focused suites should use `tests/unit/` or `tests/component/` when practical. Claude also owns shared test fixtures in `tests/conftest.py` and `tests/fixtures/`. Records every completed step in `PROGRESS.md` with verification evidence. Reads `review.md` before starting but never writes to it. **Does not edit `WORKFLOW.md` or `jobright-automation-spec.md`** — those are Codex's exclusive lane; a workflow/spec-relevant deviation or new idea gets recorded in `PROGRESS.md` instead, for Codex to fold into the appropriate document.
+- **Claude Coordinator** — reads project state, splits work into independently deliverable tasks estimated at no more than eight minutes, creates non-overlapping claims, and dispatches Developer and Bug-fixer. It plans but does not implement, merge, or push.
+- **Developer** — implements one dependency-ready feature increment within its exact claim, runs focused verification, commits its isolated branch, and records implementation evidence in `PROGRESS.md`. It never pushes or merges.
+- **Bug-fixer** — reproduces and repairs one actionable finding within its exact claim, or performs one bounded read-only audit when no finding is ready. It commits only verified fixes and never pushes or merges.
 - **Codex ("sol", continuous review/orchestrator agent)** — runs review cycles and owns end-to-end/acceptance testing under `tests/e2e/`. These tests exercise real user-visible workflows or multiple runtime stages through public interfaces (for example Auth → Discovery → Selection), validate acceptance criteria and failure recovery, and avoid mocking the behavior under test except at unavoidable external boundaries. Codex also owns `review.md` (review activity, evidence, findings, and corrections), `WORKFLOW.md` (shared process), and `jobright-automation-spec.md` (the living engineering spec). It reads `PROGRESS.md` as Claude's implementation record but never edits it. It verifies claims against real code/test behavior rather than trusting progress-log claims at face value. Codex does not rewrite Claude's implementation or focused tests; it reports failures and requested corrections in `review.md` for Claude to address. Updates `AGENTS.md`/`CLAUDE.md` only when the cross-agent operating contract itself genuinely needs clarification.
 
 Rules for both:
@@ -81,6 +83,17 @@ Rules for both:
 - New ideas beyond the spec are encouraged, but must be recorded (what was added and why) — never silently expand scope without a trace.
 - Stay in your lane's files. Claude sends handoffs to Codex through `PROGRESS.md`; Codex sends findings and correction requests to Claude through `review.md`.
 - Testing boundary: Claude may read and run `tests/e2e/` but must not edit it; Codex may read and run Claude's unit/component tests but must not edit them. Codex requests shared-fixture changes in `review.md`, and Claude implements and records them in `PROGRESS.md`.
+
+## Bounded Round Contract
+
+- A round starts on a fixed 15-minute cadence. Developer and Bug-fixer run concurrently.
+- Each implementation task targets eight minutes, receives a checkpoint marker at nine minutes, and has a hard ten-minute deadline.
+- Early completion ends the worker process; it does not start the next round early. The Coordinator waits for the next fixed boundary.
+- Completed workers commit only to their isolated branches. Checkpointed, timed-out, failed, or uncommitted results are never integrated.
+- Codex reviews results as they arrive, reruns the declared verification, integrates approved commits sequentially, and is the only role allowed to push `main`.
+- Empty rounds produce ignored runtime evidence, not empty commits. Conflicts and rejected pushes are preserved as blocked work; force-push is forbidden.
+- Automated workers return structured evidence instead of editing the shared `PROGRESS.md`. Codex adds `coordination/history/<task-id>.json` to each accepted integration commit; manual Claude work continues to use `PROGRESS.md`.
+- Live automation requires a clean, synchronized `main` and `JUNE_DEVLOOP_ENABLE=1`. Use `make dev-loop-dry-run` before enabling continuous rounds.
 
 ## Concurrent Work Safety
 

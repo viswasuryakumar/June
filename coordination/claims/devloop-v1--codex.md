@@ -1,0 +1,21 @@
+# Task claim
+
+- Claim ID: devloop-v1
+- Worker: Codex (sol)
+- Contributor lane: integration
+- Runtime epic/component: Development workflow automation
+- Status: completed
+- Started (UTC): 2026-07-11
+- Round ID: manual-bootstrap
+- Deadline: user-directed implementation turn
+- Parent task: Four-agent 15-minute development system
+- Branch: main (sole writer for claimed files)
+- Worktree: `/home/cloud_user/workspace/June`
+- Dependencies: Clean tracked baseline for coordination documents; existing Selection changes remain outside this claim
+- Files/directories claimed: `devloop/`, `tests/e2e/test_devloop*.py`, `.claude/agents/`, `Makefile`, `AGENTS.md`, `Claude.md`, `WORKFLOW.md`, `coordination/`, `.gitignore`, `review.md`
+- Public interfaces affected: `make dev-loop`, `make dev-loop-once`, `make dev-loop-dry-run`; task/result JSON contracts
+- Verification: `20` full-suite tests pass; `12` dedicated dev-loop tests pass; Ruff and Black checks pass for the new package/test; `git diff --check` passes; CLI help and Make targets resolve; live `once` correctly refuses a dirty main. A real Coordinator dry-run exceeded this execution environment's process window and was terminated before returning, so model-latency/auth execution remains a supervised bootstrap check.
+- Integration status: ready for commit and push
+- Commit SHA:
+- Checkpoint branch:
+- Handoff/risks: Selection work remained outside this claim and was independently committed/pushed by its owner. Continuous operation remains disabled until this commit is pushed, `main` is clean, and a supervised dry-run completes with local Claude authentication.

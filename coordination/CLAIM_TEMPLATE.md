@@ -6,10 +6,16 @@
 - Runtime epic/component:
 - Status: active | completed | blocked
 - Started (UTC):
+- Round ID:
+- Deadline:
+- Parent task:
 - Branch:
 - Worktree:
 - Dependencies:
 - Files/directories claimed:
 - Public interfaces affected:
 - Verification:
+- Integration status:
+- Commit SHA:
+- Checkpoint branch:
 - Handoff/risks:

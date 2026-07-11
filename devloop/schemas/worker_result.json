@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task_id", "role", "status", "summary", "changed_files", "tests", "remaining_work", "checkpoint_reason"],
+  "properties": {
+    "task_id": {"type": "string"},
+    "role": {"enum": ["developer", "bug-fixer"]},
+    "status": {"enum": ["completed", "blocked", "idle", "failed"]},
+    "summary": {"type": "string"},
+    "changed_files": {"type": "array", "items": {"type": "string"}},
+    "tests": {"type": "array", "items": {"type": "string"}},
+    "commit_sha": {"type": ["string", "null"]},
+    "remaining_work": {"type": "string"},
+    "checkpoint_reason": {"type": "string"}
+  }
+}

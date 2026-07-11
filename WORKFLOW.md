@@ -18,6 +18,14 @@ This file defines the standard workflow for every agent operating in this reposi
 - Use a separate Git branch and worktree for each concurrent writer. A shared checkout is read-only unless one designated worker is the sole writer.
 - Treat shared contracts, configuration, selectors, and fixtures as integration surfaces: only their active claimant edits them, and downstream workers consume the verified handoff.
 
+### Automated 15-minute round
+
+1. Claude Coordinator performs preflight and selects at most one eight-minute task for Developer and one for Bug-fixer.
+2. The two workers run concurrently in separate worktrees. At nine minutes the supervisor records a checkpoint request; at ten minutes it terminates unfinished work.
+3. Codex reviews completed commits as they arrive. It rejects out-of-claim, uncommitted, unverified, or incomplete results.
+4. Codex applies each approved commit without committing, reruns its single bounded verification command, adds per-task evidence under `coordination/history/`, commits the integrated result, and pushes `main` sequentially.
+5. The supervisor records the round under `runs/devloop/` and waits for the next fixed boundary. Early completion never advances the cadence.
+
 ## 3. Documentation Requirements
 After every completed step, the agent must:
 - Claude updates `PROGRESS.md` with implementation/test outcomes and evidence; Codex never edits `PROGRESS.md`
@@ -57,6 +65,8 @@ These are runtime-component ownership areas, not contributor identities. Current
 - The worker closes its claim after publishing the handoff. Closed claims remain in place as short coordination evidence; detailed history belongs in `PROGRESS.md` or `review.md`.
 - The integration owner checks that claims do not overlap, required tests pass, and public contracts remain compatible before merging.
 - Failed or incomplete work is handed off as blocked; it is never represented as complete solely because code exists.
+- Timed-out work retains its checkpoint branch and is decomposed into a smaller continuation for a later round.
+- No agent force-pushes. A rejected integration or remote update blocks the task until a fresh preflight and review.
 
 ## 7. Definition of Done
 A task is done only when:

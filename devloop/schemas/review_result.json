@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task_id", "approved", "summary", "required_corrections", "verification"],
+  "properties": {
+    "task_id": {"type": "string"},
+    "approved": {"type": "boolean"},
+    "summary": {"type": "string"},
+    "required_corrections": {"type": "array", "items": {"type": "string"}},
+    "verification": {"type": "array", "items": {"type": "string"}}
+  }
+}

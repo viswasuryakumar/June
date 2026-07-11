@@ -2,14 +2,20 @@
 
 This file separates contributor workers from runtime pipeline components. Update it when a claim starts or closes; use claim files for exact edit scope.
 
-## Contributor workers
+## Four-agent development loop
 
 | Worker | Lane | Owned artifacts | Handoff channel |
 |---|---|---|---|
-| Claude | Implementation and focused tests | `src/`, `config/`, `selectors/`, existing flat tests, `tests/unit/`, `tests/component/`, shared fixtures, `PROGRESS.md` | Reads findings from `review.md`; publishes implementation evidence in `PROGRESS.md` |
-| Codex (sol) | Review, specification, E2E acceptance, integration coordination | `review.md`, `WORKFLOW.md`, `jobright-automation-spec.md`, `tests/e2e/`, this registry | Reads implementation evidence from `PROGRESS.md`; publishes findings in `review.md` |
+| Claude Coordinator | Planning and dispatch | Task decomposition, round state, and non-overlapping claims | Dispatches one bounded task to each implementation worker every round |
+| Developer | Feature implementation | Exact files claimed for one dependency-ready feature increment | Commits its branch and returns structured evidence to Codex |
+| Bug-fixer | Defect repair and bounded audit | Exact files claimed for one review finding or audit | Commits a verified fix, or returns an evidence-backed finding/no-issue result |
+| Codex (sol) | Independent review and integration | `review.md`, `WORKFLOW.md`, `jobright-automation-spec.md`, `tests/e2e/`, this registry | Approves/rejects results; sequentially integrates and pushes accepted work |
 
 `AGENTS.md` and contributor-specific instruction files are shared-contract documents. Codex changes them only when the cross-agent contract needs correction.
+
+All four roles participate in a 15-minute round. Developer and Bug-fixer run concurrently for no more
+than ten minutes. Claude Coordinator waits after early completion; Codex reviews results as they arrive
+and owns the only permitted merge/push path.
 
 ## Runtime component status
 

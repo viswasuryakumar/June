@@ -13,6 +13,9 @@ __pycache__/
 runs/*
 !runs/.gitkeep
 
+# Git worktrees/checkpoints created by the development supervisor when configured in-repo.
+.devloop-worktrees/
+
 # Browser profile (persistent Chromium profile dir per spec §2)
 .jobright-autopilot/
 

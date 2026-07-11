@@ -1,0 +1,43 @@
+# June / JobRight auto-apply pipeline — applicant profile / answers KB.
+# Schema: src/config/profile.py:Profile
+# Fill in your real details before Epic 6 (executor) goes live. Values here
+# are placeholders and contain no real personal data.
+
+full_name: "Jane Doe"
+email: "jane.doe@example.com"
+phone: "+1-555-0100"
+linkedin_url: "https://www.linkedin.com/in/example"
+portfolio_url: null
+
+address:
+  street: ""
+  city: ""
+  state: ""
+  postal_code: ""
+  country: ""
+
+work_authorized: "decline_to_answer"
+requires_sponsorship: "decline_to_answer"
+notice_period_days: 14
+
+salary_expectation:
+  minimum: 120000
+  maximum: 160000
+  currency: "USD"
+
+eeo_self_id:
+  gender: "decline_to_answer"
+  race_ethnicity: "decline_to_answer"
+  veteran_status: "decline_to_answer"
+  disability_status: "decline_to_answer"
+
+# Free-text Q&A knowledge snippets consumed by the executor's question
+# matcher (Epic 6, T6.1.3 / T6.2.3) for application-form free-text fields.
+qa_snippets:
+  - question: "Why are you interested in this role?"
+    answer: "Placeholder answer - replace with real talking points."
+    tags: ["motivation"]
+
+# Populated automatically by Epic 7's answer-learning loop (T7.4) whenever
+# a human resolves an unknown_question HITL ticket. Empty at Epic 1 time.
+learned_answers: []

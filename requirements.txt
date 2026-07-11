@@ -1,0 +1,6 @@
+# Runtime dependencies for the June JobRight auto-apply pipeline.
+pydantic>=2.6,<3
+PyYAML>=6.0,<7
+python-dotenv>=1.0,<2
+playwright>=1.42,<2
+click>=8.1,<9

@@ -1,0 +1,31 @@
+# Centralized selector registry (spec §3.3).
+# All CSS/XPath selectors used against jobright.ai (and its extension UI)
+# live here under semantic keys - modules must reference keys via
+# src.observability.selectors.SelectorRegistry, never hardcode raw
+# selectors inline.
+#
+# PLACEHOLDER VALUES: Epic 1 has no live JobRight access (no credentials).
+# The values below are structural placeholders so downstream epics have a
+# registry to code against immediately. Epic 2/3/5/6 owners MUST replace
+# these with real selectors verified against the live site, and keep this
+# file current as the source of truth (one agent owns this file).
+
+login:
+  email_input: "#email"           # PLACEHOLDER - verify against live login form
+  password_input: "#password"     # PLACEHOLDER
+  submit_button: "button[type=submit]"  # PLACEHOLDER
+  sso_google_button: "button[data-provider=google]"  # PLACEHOLDER
+  dashboard_indicator: "[data-testid=user-avatar]"    # PLACEHOLDER - proves logged-in state
+
+jobs:
+  card: "[data-testid=job-card]"          # PLACEHOLDER
+  match_score: "[data-testid=match-score]"  # PLACEHOLDER
+  title: "[data-testid=job-title]"        # PLACEHOLDER
+  company: "[data-testid=job-company]"    # PLACEHOLDER
+
+resume:
+  tailor_button: "[data-testid=tailor-resume]"  # PLACEHOLDER
+
+apply:
+  agent_button: "[data-testid=apply-with-agent]"     # PLACEHOLDER
+  extension_autofill_button: "[data-testid=extension-autofill]"  # PLACEHOLDER

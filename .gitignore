@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets - never commit
+.env
+
+# Runtime artifacts (screenshots, HTML dumps, logs per run)
+runs/*
+!runs/.gitkeep
+
+# Browser profile (persistent Chromium profile dir per spec §2)
+.jobright-autopilot/
+
+# JSON schema exports (generated; regenerate via src/contracts/schema_export.py)
+contracts/schemas/
+
+# OS/editor cruft
+.DS_Store

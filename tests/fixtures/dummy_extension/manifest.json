@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "June Dummy Test Extension",
+  "version": "0.0.1",
+  "description": "Trivial placeholder extension used only to verify launch_persistent_context can load an unpacked extension. NOT the real JobRight extension.",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": []
+}

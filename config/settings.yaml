@@ -1,0 +1,44 @@
+# June / JobRight auto-apply pipeline — runtime settings.
+# Schema: src/config/settings.py:Settings
+# This file ships with conservative defaults; tune before enabling `auto`
+# approval_mode or raising max_applications_per_day.
+
+max_applications_per_day: 5
+min_match_score: 70
+
+# Regexes are matched against the job title. A title matching any exclude
+# regex is dropped even if it also matches an include regex.
+title_include_regexes:
+  - "(?i)software engineer"
+  - "(?i)backend"
+  - "(?i)platform engineer"
+title_exclude_regexes:
+  - "(?i)senior director"
+  - "(?i)principal.*manager"
+
+location_rules:
+  remote_policy: "remote_only"   # remote_only | hybrid_ok | onsite_ok | any
+  allowed_locations: []
+  disallowed_locations: []
+
+salary_floor: 100000
+unknown_salary_policy: "accept"   # accept | reject jobs with no listed salary
+
+blocklisted_companies: []
+
+approval_mode: "approve_each"   # auto | approve_each | approve_batch
+
+active_hours:
+  start: "08:00"
+  end: "20:00"
+  timezone: "UTC"
+
+per_domain_rate_limits:
+  "jobright.ai": 20
+  "greenhouse.io": 5
+  "lever.co": 5
+  "myworkdayjobs.com": 3
+  "ashbyhq.com": 5
+  "icims.com": 3
+
+max_posting_age_days: 30

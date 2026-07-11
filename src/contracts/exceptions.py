@@ -25,6 +25,23 @@ class ConfigError(JuneError):
     """Raised when settings.yaml / profile.yaml fail validation."""
 
 
+class LoginFailed(JuneError):
+    """Raised when the login flow has failed `max_failures` consecutive
+    times (spec T2.3.3 / Epic 2 session lifecycle).
+
+    Hard-stops the auto-relogin loop rather than continuing to hammer the
+    login endpoint; the caller (orchestrator, once it exists) should
+    notify and halt the run rather than retry further.
+    """
+
+    def __init__(self, attempts: int, max_failures: int):
+        self.attempts = attempts
+        self.max_failures = max_failures
+        super().__init__(
+            f"login failed {attempts} consecutive time(s); hard-stop at {max_failures}"
+        )
+
+
 class SelectorBroken(JuneError):
     """Raised when a registered selector fails to resolve on a live page.
 

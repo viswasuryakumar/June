@@ -9,7 +9,7 @@ pytestmark = pytest.mark.playwright
 @pytest.fixture(scope="module")
 def sync_page():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=True, channel="chromium")
         page = browser.new_page()
         page.goto(
             "data:text/html,<html><body><button id='real-button'>Click</button></body></html>"

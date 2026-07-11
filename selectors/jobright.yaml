@@ -16,12 +16,36 @@ login:
   submit_button: "button[type=submit]"  # PLACEHOLDER
   sso_google_button: "button[data-provider=google]"  # PLACEHOLDER
   dashboard_indicator: "[data-testid=user-avatar]"    # PLACEHOLDER - proves logged-in state
+  # Added by Epic 2 (auth) owner: generic 2FA/OTP/email-verification
+  # challenge-screen indicator (spec S2.2.3). No live challenge screen has
+  # ever been observed (no credentials in this environment) - this key is
+  # a structural placeholder so detect_challenge_screen() is pluggable and
+  # testable against fixture HTML today; verify/replace against the real
+  # challenge UI the first time a human completes a live 2FA challenge.
+  challenge_indicator: "[data-testid=login-challenge]"  # PLACEHOLDER
 
 jobs:
   card: "[data-testid=job-card]"          # PLACEHOLDER
   match_score: "[data-testid=match-score]"  # PLACEHOLDER
   title: "[data-testid=job-title]"        # PLACEHOLDER
   company: "[data-testid=job-company]"    # PLACEHOLDER
+  # Added by Epic 3 (discovery) owner - see src/discovery/*.py.
+  # `feed_url` is deliberately not a CSS selector: it's the jobs feed
+  # entry-point URL (S3.1.1), reusing the same centralized semantic-key
+  # registry mechanism spec §3.3 mandates for "all selectors" so this
+  # entry point isn't hardcoded in src/discovery/feed.py either.
+  feed_url: "https://jobright.ai/jobs/recommended"  # PLACEHOLDER - not a CSS selector, see note above
+  # Structural container for the whole feed - if this never resolves via
+  # resolve_locator(), that IS a genuine SelectorBroken (the jobs page
+  # layout changed / failed to load), unlike a card-level field being
+  # absent (see src/discovery/extraction.py).
+  feed_container: "[data-testid=jobs-feed]"  # PLACEHOLDER
+  card_link: "a[data-testid=job-card-link]"   # PLACEHOLDER - href source for job_id (see extraction.py:derive_job_id)
+  location: "[data-testid=job-location]"      # PLACEHOLDER
+  salary: "[data-testid=job-salary]"           # PLACEHOLDER
+  posted_at: "[data-testid=job-posted-at]"     # PLACEHOLDER
+  detail_description: "[data-testid=job-description]"        # PLACEHOLDER
+  detail_external_link: "a[data-testid=external-apply-link]"  # PLACEHOLDER
 
 resume:
   tailor_button: "[data-testid=tailor-resume]"  # PLACEHOLDER
@@ -29,3 +53,7 @@ resume:
 apply:
   agent_button: "[data-testid=apply-with-agent]"     # PLACEHOLDER
   extension_autofill_button: "[data-testid=extension-autofill]"  # PLACEHOLDER
+  # Reused (not added) by Epic 3's job-detail enrichment (T3.2.2) to
+  # determine `apply_mode`: agent_button present -> "agent",
+  # extension_autofill_button present -> "extension", else if an
+  # external_url was found -> "manual_only", else "unknown".

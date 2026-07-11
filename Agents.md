@@ -48,6 +48,8 @@ This repository is for building an autonomous JobRight auto-apply pipeline. The 
 Every agent must write documentation after completing each step or task.
 
 - Record completed work in PROGRESS.md.
+- Read `review.md` before starting and address or explicitly hand off any open finding in the files you own.
+- Keep `review.md` as the rolling evidence-based review report; use stable finding IDs and mark findings resolved instead of deleting them.
 - Keep long-form process guidance in WORKFLOW.md.
 - Do not put detailed progress history into AGENTS.md; keep it in the dedicated progress log.
 
@@ -66,6 +68,17 @@ For every task, record:
 - verification evidence
 
 If a task is still in progress, add an entry marked as in-progress with the blocker and the next action.
+
+## Multi-Agent Roles
+Two independent agents operate on this repo concurrently, split by lane rather than by task slice. Each owns its lane end-to-end — including proposing and adding new ideas beyond the literal spec text where they improve the product — and neither silently edits the other's files.
+
+- **Claude (implementation agent)** — builds and fixes the pipeline. Owns `src/`, `config/`, `selectors/`, and `tests/`: implements features, resolves findings raised in `review.md`, writes/maintains automated tests, and spawns subagents to parallelize implementation and validation work. Records every completed step in `PROGRESS.md` with verification evidence, and keeps `WORKFLOW.md` current. Reads `review.md` before starting but never writes to it. **Does not edit `jobright-automation-spec.md`** — that is Codex's exclusive lane; a spec-relevant deviation or new idea gets recorded in `PROGRESS.md` instead, for Codex to fold into the spec.
+- **Codex ("sol", continuous review/orchestrator agent)** — runs a recurring review cycle. Owns `review.md` (the rolling, evidence-based findings report — stable finding IDs, marked resolved rather than deleted) and `jobright-automation-spec.md` (the living spec: updates it to reflect implementation reality, deviations, and superseded assumptions, reading `PROGRESS.md`/`WORKFLOW.md` as its source of truth for what actually shipped). Verifies claims against real code/test behavior rather than trusting progress-log claims at face value. Does not rewrite Claude's implementation code; it reviews, flags, and documents. Updates `AGENTS.md`/`CLAUDE.md` only when the cross-agent operating contract itself genuinely needs clarification.
+
+Rules for both:
+- Read `PROGRESS.md` (and, for Codex, the spec) before starting, so you build on the other agent's latest state instead of duplicating or contradicting it.
+- New ideas beyond the spec are encouraged, but must be recorded (what was added and why) — never silently expand scope without a trace.
+- Stay in your lane's files; if a change requires touching the other agent's area, note it in `PROGRESS.md` as a handoff instead of doing it silently.
 
 ## Workflow Contract
 Each agent must follow this workflow for every task:
@@ -96,4 +109,3 @@ A task is only complete when all of the following are true:
 - Do not touch secrets, tokens, or personal data outside the approved config flow.
 - Do not edit historical progress entries; append new entries when correcting or extending information.
 - If blocked, record the blocker clearly instead of silently skipping the work.
-

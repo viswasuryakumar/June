@@ -90,6 +90,17 @@ class Profile(BaseModel):
     qa_snippets: list[QASnippet] = Field(default_factory=list)
     learned_answers: list[LearnedAnswer] = Field(default_factory=list)
 
+    skills: list[str] = Field(
+        default_factory=list,
+        description="Epic 4 (Selection Engine) T4.2.1 addition: canonical "
+        "skill-keyword list scored against each job's title/description for "
+        "the composite-score keyword-overlap sub-score (see "
+        "src/selection/scoring.py:composite_score()). Optional field with a "
+        "default (empty list), per the additive-extension convention other "
+        "epics have used for Settings/Profile - an empty list simply scores "
+        "0.0 keyword overlap for every job rather than breaking anything.",
+    )
+
 
 def load_profile(path: str | Path) -> Profile:
     """Load and validate profile.yaml. Raises ConfigError with a clear

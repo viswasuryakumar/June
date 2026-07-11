@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from src.contracts.exceptions import ConfigError
 
@@ -69,6 +69,81 @@ class Settings(BaseModel):
         gt=0,
         description="freshness policy consumed by Epic 3 discovery",
     )
+    max_discovery_pages: int = Field(
+        default=10,
+        gt=0,
+        description="Epic 3 T3.1.2: scroll-and-settle pagination cap for the jobs feed "
+        "(no-new-cards termination is checked first; this is the hard backstop)",
+    )
+    discovery_enrichment_score_threshold: int = Field(
+        default=50,
+        ge=0,
+        le=100,
+        description="Epic 3 T3.2.2: coarse match-score gate for opening a job's detail page "
+        "during discovery (cheap card-only ingestion below this, full enrichment at/above "
+        "it). Deliberately separate from and looser than `min_match_score`, which is Epic "
+        "4 Selection's stricter apply-worthiness gate - discovery wants to enrich anything "
+        "plausibly interesting, not just what will ultimately be selected.",
+    )
+    max_login_failures: int = Field(
+        default=3,
+        gt=0,
+        description="Epic 2 T2.3.3: hard-stop threshold for consecutive login failures",
+    )
+    login_backoff_base_seconds: float = Field(
+        default=2.0,
+        gt=0,
+        description="Epic 2 T2.3.3: base seconds for exponential backoff+jitter between "
+        "login retries",
+    )
+
+    # Epic 4 (Selection Engine) T4.2.1: composite-score weights. Defaults sum
+    # to 1.0 (validated below) so the composite score stays a 0..1-ish scale
+    # matching each individual sub-score's own 0..1 normalization (see
+    # src/selection/scoring.py:composite_score()).
+    score_weight_match: float = Field(
+        default=0.4,
+        ge=0,
+        le=1,
+        description="Weight for JobRight's own match_score in the composite score",
+    )
+    score_weight_keyword_overlap: float = Field(
+        default=0.25,
+        ge=0,
+        le=1,
+        description="Weight for the profile.skills-vs-description/title keyword "
+        "overlap ratio in the composite score",
+    )
+    score_weight_recency: float = Field(
+        default=0.15,
+        ge=0,
+        le=1,
+        description="Weight for posting recency (exponential decay by age, scaled "
+        "by max_posting_age_days) in the composite score",
+    )
+    score_weight_salary_fit: float = Field(
+        default=0.2,
+        ge=0,
+        le=1,
+        description="Weight for how comfortably the job's salary clears "
+        "salary_floor in the composite score",
+    )
+
+    # Epic 4 T4.2.2: optional LLM-rationale pass. Feature-flagged and
+    # off by default - src/selection/scoring.py:rank_jobs() must (and does)
+    # produce identical scores/ranking whether or not this is enabled/a
+    # rationale_fn is supplied.
+    enable_llm_rationale: bool = Field(
+        default=False,
+        description="Feature flag for the optional top-K LLM 'why this fits / "
+        "risks' rationale pass (S4.2.2). Pipeline runs unchanged when False.",
+    )
+    llm_rationale_top_k: int = Field(
+        default=5,
+        gt=0,
+        description="How many top-ranked survivors get an LLM rationale when "
+        "enable_llm_rationale is True and a rationale_fn is supplied",
+    )
 
     @field_validator("title_include_regexes", "title_exclude_regexes")
     @classmethod
@@ -79,6 +154,22 @@ class Settings(BaseModel):
             except re.error as exc:
                 raise ValueError(f"invalid regex {pattern!r}: {exc}") from exc
         return patterns
+
+    @model_validator(mode="after")
+    def _score_weights_sum_to_one(self) -> Settings:
+        total = (
+            self.score_weight_match
+            + self.score_weight_keyword_overlap
+            + self.score_weight_recency
+            + self.score_weight_salary_fit
+        )
+        if abs(total - 1.0) > 1e-6:
+            raise ValueError(
+                "score_weight_match + score_weight_keyword_overlap + "
+                "score_weight_recency + score_weight_salary_fit must sum to 1.0 "
+                f"(got {total!r})"
+            )
+        return self
 
 
 def load_settings(path: str | Path) -> Settings:

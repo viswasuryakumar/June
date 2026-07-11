@@ -135,6 +135,10 @@ class InMemoryTrackerRepository(TrackerRepository):
             updated.attempts += 1
         if "screenshot" in meta:
             updated.screenshots.append(meta["screenshot"])
+        if "skip_reason" in meta:
+            # Epic 4 (Selection Engine) addition: records the machine-readable
+            # reason code when a job is transitioned to "skipped" (S4.3.2).
+            updated.skip_reason = meta["skip_reason"]
 
         self._records[job_id] = updated
         self._log_event(

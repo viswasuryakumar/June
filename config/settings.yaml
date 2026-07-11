@@ -42,3 +42,25 @@ per_domain_rate_limits:
   "icims.com": 3
 
 max_posting_age_days: 30
+
+# Epic 3 (discovery) T3.1.2 / T3.2.2: pagination budget and the coarse
+# score gate for opening a job's detail page (looser than min_match_score
+# above, which is Selection's stricter apply-worthiness threshold).
+max_discovery_pages: 10
+discovery_enrichment_score_threshold: 50
+
+# Epic 2 (auth) session lifecycle T2.3.3: never hammer the login endpoint.
+max_login_failures: 3
+login_backoff_base_seconds: 2.0
+
+# Epic 4 (Selection Engine) T4.2.1: composite-score weights, must sum to 1.0.
+score_weight_match: 0.4
+score_weight_keyword_overlap: 0.25
+score_weight_recency: 0.15
+score_weight_salary_fit: 0.2
+
+# Epic 4 T4.2.2: optional top-K LLM rationale pass ("why this fits / risks").
+# Feature-flagged and off by default - the pipeline runs identically without
+# it; only takes effect when a rationale_fn is also supplied by the caller.
+enable_llm_rationale: false
+llm_rationale_top_k: 5

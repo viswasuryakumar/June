@@ -41,3 +41,13 @@ qa_snippets:
 # Populated automatically by Epic 7's answer-learning loop (T7.4) whenever
 # a human resolves an unknown_question HITL ticket. Empty at Epic 1 time.
 learned_answers: []
+
+# Epic 4 (Selection Engine) T4.2.1: canonical skill-keyword list scored
+# against each job's title/description for the composite score's keyword
+# overlap sub-score. Replace with your own real skill list.
+skills:
+  - "Python"
+  - "Playwright"
+  - "SQL"
+  - "REST APIs"
+  - "AWS"

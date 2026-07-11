@@ -41,7 +41,16 @@ HITLTicketKind = Literal[
     "final_approval",
     "login_2fa",
     "selector_broken",
+    "batch_approval",
 ]
+"""`batch_approval` added by the Epic 4 (Selection Engine) agent for
+S4.3.3: when `approval_mode != "auto"`, one ticket of this kind is
+opened per selection run covering the whole batch of newly-`selected`
+jobs (see `src/selection/engine.py:select_and_queue()`), rather than a
+per-job `final_approval` ticket (which stays Epic 6's - it gates the
+final submit step of one specific application, not a batch of
+selections). Additive per §3.1's own extension policy: no existing
+literal member was removed or renamed."""
 
 
 class Job(BaseModel):
@@ -76,6 +85,15 @@ class ApplicationRecord(BaseModel):
     last_error: str | None = None
     screenshots: list[str] = Field(default_factory=list)
     timestamps: dict[str, datetime] = Field(default_factory=dict)
+    skip_reason: str | None = Field(
+        default=None,
+        description="Machine-readable reason code recorded when status becomes "
+        "'skipped' (Epic 4 Selection Engine addition, S4.3.2 - e.g. "
+        "'below_min_match_score', 'title_excluded', 'blocklisted_company'; see "
+        "src/selection/filters.py for the full stable set). Optional field with "
+        "a default, per §3.1's additive-extension policy - never populated for "
+        "records skipped before Epic 4 existed.",
+    )
 
 
 class HITLTicket(BaseModel):

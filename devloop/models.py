@@ -5,6 +5,7 @@ from typing import Literal
 
 Role = Literal["developer", "bug-fixer"]
 TaskStatus = Literal["ready", "active", "completed", "blocked", "idle"]
+SourceType = Literal["request", "review", "spec", "audit", "checkpoint"]
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,9 @@ class Task:
     estimated_minutes: int = 8
     dependencies: tuple[str, ...] = ()
     parent_task: str | None = None
+    source_type: SourceType = "spec"
+    source_id: str = "engineering-spec"
+    completes_request: bool = False
 
     @classmethod
     def from_dict(cls, data: dict) -> Task:
@@ -33,6 +37,9 @@ class Task:
             estimated_minutes=int(data.get("estimated_minutes", 8)),
             dependencies=tuple(data.get("dependencies", ())),
             parent_task=data.get("parent_task"),
+            source_type=data.get("source_type", "spec"),
+            source_id=data.get("source_id", "engineering-spec"),
+            completes_request=bool(data.get("completes_request", False)),
         )
 
     def to_dict(self) -> dict:

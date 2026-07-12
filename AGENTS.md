@@ -43,6 +43,8 @@ This repository is for building an autonomous JobRight auto-apply pipeline. The 
 - Keep shared contracts, selectors, and configuration centralized.
 - Never hardcode secrets or credentials. Use environment variables or a secure secret store.
 - If a task is ambiguous, document the assumption and proceed with the smallest safe implementation.
+- Treat `coordination/user/` as human-owned input. Agents may read it but never edit requests,
+  feedback, decisions, or proposal decisions.
 
 ## Documentation Requirement
 Every agent must document completed work in the artifact assigned to its lane.
@@ -93,6 +95,10 @@ Rules for both:
 - Codex reviews results as they arrive, reruns the declared verification, integrates approved commits sequentially, and is the only role allowed to push `main`.
 - Empty rounds produce ignored runtime evidence, not empty commits. Conflicts and rejected pushes are preserved as blocked work; force-push is forbidden.
 - Automated workers return structured evidence instead of editing the shared `PROGRESS.md`. Codex adds `coordination/history/<task-id>.json` to each accepted integration commit; manual Claude work continues to use `PROGRESS.md`.
+- Only `approved` user requests may produce edit tasks. Technical delivery does not close a product
+  request; user feedback must mark it `accepted` or `changes-required`.
+- Workflow-improvement proposals never modify prompts, timing, schemas, or supervisor code
+  automatically. They require a user decision and a separate control-plane maintenance claim.
 - Live automation requires a clean, synchronized `main` and `JUNE_DEVLOOP_ENABLE=1`. Use `make dev-loop-dry-run` before enabling continuous rounds.
 
 ## Concurrent Work Safety
@@ -103,6 +109,9 @@ Rules for both:
 - Never merge or copy another worker's incomplete changes. The integration owner accepts a handoff only after the worker records verification evidence.
 - Runtime-stage names such as Auth, Discovery, and Executor describe product components. Claude and Codex are contributor roles. Do not use the two categories interchangeably in task claims or status reports.
 - `coordination/WORKERS.md` is the current worker and epic registry. It is status, not historical evidence; `PROGRESS.md` and `review.md` remain the lane-specific history.
+- User requests control product priority and user-visible intent. `jobright-automation-spec.md` remains
+  authoritative for architecture, contracts, dependencies, and safety. Stop for a recorded user
+  decision when the two conflict.
 
 ## Workflow Contract
 Each agent must follow this workflow for every task:

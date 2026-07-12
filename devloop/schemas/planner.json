@@ -9,7 +9,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["task_id", "role", "title", "prompt", "files", "acceptance_criteria", "verification_command", "estimated_minutes"],
+        "required": ["task_id", "role", "title", "prompt", "files", "acceptance_criteria", "verification_command", "estimated_minutes", "source_type", "source_id", "completes_request"],
         "properties": {
           "task_id": {"type": "string"},
           "role": {"enum": ["developer", "bug-fixer"]},
@@ -21,6 +21,9 @@
           "estimated_minutes": {"type": "integer", "minimum": 1, "maximum": 8},
           "dependencies": {"type": "array", "items": {"type": "string"}},
           "parent_task": {"type": ["string", "null"]}
+          ,"source_type": {"enum": ["request", "review", "spec", "audit", "checkpoint"]}
+          ,"source_id": {"type": "string"}
+          ,"completes_request": {"type": "boolean"}
         }
       }
     }

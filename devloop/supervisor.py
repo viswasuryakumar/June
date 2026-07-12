@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from devloop.contracts import SCHEMA_DIR, load_schema, unwrap_claude_json
+from devloop.intake import IntakeError, IntakeSnapshot, RequestState, load_intake, write_state
 from devloop.models import ReviewResult, Task, WorkerResult
 
 
@@ -179,6 +180,9 @@ class DevLoopSupervisor:
             "review.md",
             "devloop",
             "coordination/history",
+            "coordination/user",
+            "coordination/state",
+            "coordination/proposals",
         )
         roles = [task.role for task in tasks]
         if len(roles) != len(set(roles)):
@@ -205,6 +209,26 @@ class DevLoopSupervisor:
             raise DevLoopError("developer and bug-fixer claims overlap")
 
     @staticmethod
+    def validate_task_sources(tasks: list[Task], intake: IntakeSnapshot) -> None:
+        eligible = intake.eligible_requests()
+        eligible_ids = {request.request_id for request in eligible}
+        top_request = eligible[0].request_id if eligible else None
+        for task in tasks:
+            if task.source_type == "request":
+                if task.source_id not in eligible_ids:
+                    raise DevLoopError(
+                        f"{task.task_id} references ineligible request {task.source_id}"
+                    )
+                if task.source_id != top_request:
+                    raise DevLoopError(
+                        f"{task.task_id} skipped higher-priority eligible request {top_request}"
+                    )
+            elif task.completes_request:
+                raise DevLoopError(
+                    f"{task.task_id} can complete a request only when source_type is request"
+                )
+
+    @staticmethod
     def _claims_overlap(left: tuple[str, ...], right: tuple[str, ...]) -> bool:
         def overlaps(a: str, b: str) -> bool:
             a = a.rstrip("/")
@@ -214,13 +238,25 @@ class DevLoopSupervisor:
         return any(overlaps(a, b) for a in left for b in right)
 
     def _plan_with_claude(self, round_id: str) -> list[Task]:
+        try:
+            intake = load_intake(self.config.repo)
+        except IntakeError as exc:
+            raise DevLoopError(f"invalid user intake: {exc}") from exc
+        intake_context = intake.planner_context()
         prompt = (
             f"Plan round {round_id}. Read AGENTS.md, WORKFLOW.md, coordination/WORKERS.md, "
-            "PROGRESS.md, review.md, and the specification. Return at most one developer task "
+            "PROGRESS.md, review.md, coordination/user/DECISIONS.md, and the specification. "
+            f"Eligible approved requests in deterministic priority order:\n{intake_context}\n"
+            "Return at most one developer task "
             "and one bug-fixer task. Each must be independently deliverable in eight minutes, "
             "claim exact non-overlapping files, and include one bounded verification command. "
-            "Prefer actionable review findings for bug-fixer work; otherwise assign one bounded "
-            "read-only audit. Return no task for a role when no safe task exists. Do not edit files."
+            "Priority is: changes-required feedback, approved critical/high requests, checkpoints, "
+            "critical/high review findings, approved medium/low requests, then remaining spec work. "
+            "A request task must reference the first eligible request above. Set completes_request "
+            "true only when the task satisfies every remaining acceptance criterion. If a request "
+            "conflicts with the technical safety baseline, return no task until the user records a "
+            "decision. Otherwise give Bug-fixer one bounded audit when no defect is ready. Return no "
+            "task for a role when no safe task exists. Do not edit files."
         )
         schema = json.dumps(load_schema("planner"), separators=(",", ":"))
         result = self.run_command(
@@ -238,13 +274,14 @@ class DevLoopSupervisor:
                 prompt,
             ),
             self.config.repo,
-            min(120.0, self.config.target_seconds),
+            min(240.0, self.config.target_seconds),
         )
         if result.returncode != 0:
             raise DevLoopError(result.stderr.strip() or "Claude coordinator failed")
         data = unwrap_claude_json(result.stdout)
         tasks = [Task.from_dict(item) for item in data.get("tasks", [])]
         self.validate_tasks(tasks)
+        self.validate_task_sources(tasks, intake)
         return tasks
 
     def _create_worktree(self, task: Task, round_id: str) -> tuple[str, Path]:
@@ -260,6 +297,8 @@ class DevLoopSupervisor:
         return f"""Round: {round_id}
 Task: {task.task_id} — {task.title}
 Role: {task.role}
+Source: {task.source_type}:{task.source_id}
+Completes source request: {task.completes_request}
 Target: finish within 8 minutes. At 9 minutes checkpoint. Never exceed 10 minutes.
 
 Instructions:
@@ -398,9 +437,25 @@ recoverable checkpoint on this branch.
     ) -> ReviewResult:
         output = self.config.runs_dir / round_id / f"codex-{task.task_id}.json"
         output.parent.mkdir(parents=True, exist_ok=True)
+        request_acceptance: list[str] = []
+        if task.source_type == "request":
+            try:
+                request = load_intake(self.config.repo).requests.get(task.source_id)
+            except IntakeError as exc:
+                return ReviewResult(
+                    task_id=task.task_id,
+                    approved=False,
+                    summary=f"Invalid user intake during review: {exc}",
+                    required_corrections=["Repair intake before retrying review."],
+                )
+            if request:
+                request_acceptance = list(request.acceptance_criteria)
         prompt = (
             f"Independently review task {task.task_id} against {self.config.main_branch}. "
+            f"Source: {task.source_type}:{task.source_id}. "
             f"Claimed files: {list(task.files)}. Acceptance: {list(task.acceptance_criteria)}. "
+            f"Full source-request acceptance: {request_acceptance}. "
+            f"Worker claims this completes the request: {task.completes_request}. "
             f"Required verification: {task.verification_command}. Inspect only; do not edit, commit, "
             "merge, or push. Approve only if scope, behavior, regression coverage, and evidence are sound."
         )
@@ -494,6 +549,26 @@ recoverable checkpoint on this branch.
             encoding="utf-8",
         )
         self._git("add", str(evidence_path.relative_to(self.config.repo)))
+        if task.source_type == "request":
+            try:
+                snapshot = load_intake(self.config.repo)
+            except IntakeError as exc:
+                self._git("cherry-pick", "--abort")
+                raise DevLoopError(f"invalid user intake during integration: {exc}") from exc
+            state = snapshot.states.get(task.source_id, RequestState(task.source_id))
+            if task.task_id not in state.child_task_ids:
+                state.child_task_ids.append(task.task_id)
+            if review:
+                state.codex_reviews.append(review.to_dict())
+            latest = snapshot.latest_feedback(task.source_id)
+            if latest and latest.verdict == "changes-required":
+                state.last_consumed_feedback = str(latest.path.relative_to(self.config.repo))
+            state.lifecycle = "delivered" if task.completes_request else "in-progress"
+            state.unmet_acceptance_criteria = (
+                [] if task.completes_request else list(task.acceptance_criteria)
+            )
+            state_path = write_state(self.config.repo, state)
+            self._git("add", str(state_path.relative_to(self.config.repo)))
         self._git("commit", "-m", f"{task.task_id}: {task.title}")
         integrated_sha = self._git("rev-parse", "HEAD")
         if self.config.push:
@@ -505,6 +580,88 @@ recoverable checkpoint on this branch.
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
 
+    def _maybe_write_improvement_proposal(self) -> Path | None:
+        marker = self.config.runs_dir / "last-improvement-round.txt"
+        last_round = marker.read_text(encoding="utf-8").strip() if marker.exists() else ""
+        all_rounds = sorted(self.config.runs_dir.glob("*/round.json"))
+        rounds = [path for path in all_rounds if path.parent.name > last_round][-8:]
+        if not rounds:
+            return None
+        payloads = [json.loads(path.read_text(encoding="utf-8")) for path in rounds]
+        results = [item for payload in payloads for item in payload.get("results", [])]
+        failures = sum(item.get("status") in {"timed_out", "failed", "blocked"} for item in results)
+        completed = [item for item in results if item.get("status") == "completed"]
+        average_seconds = (
+            round(
+                sum(float(item.get("elapsed_seconds", 0)) for item in completed) / len(completed), 2
+            )
+            if completed
+            else 0
+        )
+        reviews = [item for payload in payloads for item in payload.get("reviews", [])]
+        rejections = sum(not item.get("approved", False) for item in reviews)
+        try:
+            intake = load_intake(self.config.repo)
+            changes_required = sum(
+                bool(intake.latest_feedback(request_id))
+                and intake.latest_feedback(request_id).verdict == "changes-required"
+                for request_id in intake.requests
+            )
+        except IntakeError:
+            changes_required = 0
+        existing = list((self.config.repo / "coordination" / "proposals").glob("IMP-*.md"))
+        if len(rounds) < 8 and failures + rejections < 3:
+            return None
+        proposal_id = f"IMP-{len(existing) + 1:03d}"
+        path = self.config.repo / "coordination" / "proposals" / f"{proposal_id}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            f"""---
+id: {proposal_id}
+status: proposed
+rounds_observed: {len(rounds)}
+---
+
+# {proposal_id} — Development-loop retrospective
+
+## Evidence
+
+- Worker failures, blocks, or timeouts: {failures}
+- Codex rejections: {rejections}
+- Completed worker results: {len(completed)}
+- Average completed-worker seconds: {average_seconds}
+- Requests currently carrying changes-required feedback: {changes_required}
+- Round files reviewed: {len(rounds)}
+
+## Observed problem
+
+Review the failed or rejected round evidence for repeated task-sizing, prompt, verification, or workflow issues.
+
+## Proposed improvement
+
+Produce one bounded control-plane change only after the user records an approved proposal decision.
+
+## Expected improvement
+
+Lower the observed failure or rejection rate without weakening scope, review, or verification gates.
+
+## Risks
+
+Prompt or timing changes can reduce safety or hide incomplete work.
+
+## Validation experiment
+
+Run the full dev-loop regression suite and one supervised dry-run, then compare the next eight rounds.
+
+## Rollback rule
+
+Revert if failures or rejections increase, scope enforcement weakens, or integration evidence is lost.
+""",
+            encoding="utf-8",
+        )
+        marker.write_text(rounds[-1].parent.name, encoding="utf-8")
+        return path
+
     def run_once(self, *, dry_run: bool = False, _manage_lock: bool = True) -> dict:
         if _manage_lock:
             self.acquire_lock()
@@ -514,6 +671,11 @@ recoverable checkpoint on this branch.
             self.preflight(require_clean=not dry_run)
             tasks = self.plan_provider(round_id)
             self.validate_tasks(tasks)
+            try:
+                intake = load_intake(self.config.repo)
+            except IntakeError as exc:
+                raise DevLoopError(f"invalid user intake: {exc}") from exc
+            self.validate_task_sources(tasks, intake)
             if dry_run:
                 payload = {
                     "round_id": round_id,
@@ -570,6 +732,12 @@ recoverable checkpoint on this branch.
                 "elapsed_seconds": self.monotonic() - started,
             }
             self._write_round(round_id, payload)
+            proposal = self._maybe_write_improvement_proposal()
+            if proposal is not None:
+                self._git("add", str(proposal.relative_to(self.config.repo)))
+                self._git("commit", "-m", f"docs(devloop): add {proposal.stem} retrospective")
+                if self.config.push:
+                    self._git("push", self.config.remote, self.config.main_branch, timeout=120)
             return payload
         finally:
             if _manage_lock:

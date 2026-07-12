@@ -2,6 +2,10 @@
 
 This directory holds current coordination state. It does not replace implementation history in `PROGRESS.md` or review evidence in `review.md`.
 
+`coordination/user/` is the human-owned product inbox. Requests determine priority; feedback accepts
+or reopens delivered behavior; decisions resolve ambiguity; proposal decisions gate changes to the
+development workflow. Agents never edit those inputs.
+
 ## Claiming work
 
 Before editing, create `coordination/claims/<task-id>--<worker>.md` from `CLAIM_TEMPLATE.md`. Use a short stable task ID such as `e4-selection` or `rev-004`.
@@ -23,6 +27,10 @@ empty commits.
 
 Use `make dev-loop-dry-run` to inspect proposed tasks. Continuous execution is deliberately gated by
 `JUNE_DEVLOOP_ENABLE=1` and refuses a dirty, behind, or unpushed `main` branch.
+
+Only approved requests are eligible. The supervisor parses and validates request briefs before
+planning, records source traceability on every task, stores delivery state in `coordination/state/`,
+and keeps original user text unchanged.
 
 ## Integration
 

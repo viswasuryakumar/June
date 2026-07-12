@@ -85,6 +85,10 @@ def test_planner_rejects_unsafe_ids_and_control_plane_claims() -> None:
         DevLoopSupervisor.validate_tasks([task("developer", "../escape", ("src/a.py",))])
     with pytest.raises(DevLoopError, match="protected control-plane"):
         DevLoopSupervisor.validate_tasks([task("bug-fixer", "rewrite-loop", ("devloop",))])
+    with pytest.raises(DevLoopError, match="protected control-plane"):
+        DevLoopSupervisor.validate_tasks(
+            [task("developer", "rewrite-user", ("coordination/user/requests/REQ-005.md",))]
+        )
 
 
 def test_verification_command_is_allowlisted(tmp_path: Path) -> None:

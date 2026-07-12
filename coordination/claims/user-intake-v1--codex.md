@@ -1,0 +1,21 @@
+# Task claim
+
+- Claim ID: user-intake-v1
+- Worker: Codex (sol)
+- Contributor lane: integration
+- Runtime epic/component: Development workflow user intake and feedback
+- Status: completed
+- Started (UTC): 2026-07-12
+- Round ID: manual-user-intake
+- Deadline: user-directed implementation turn
+- Parent task: User request, feedback, and controlled self-improvement layer
+- Branch: main (sole writer for claimed files)
+- Worktree: `/home/cloud_user/workspace/June`
+- Dependencies: Four-agent dev-loop supervisor at `bbe5aff`
+- Files/directories claimed: `coordination/user/`, `coordination/state/`, `coordination/proposals/`, `coordination/claims/user-intake-v1--codex.md`, `devloop/`, `.claude/agents/coordinator.md`, `tests/e2e/test_devloop*.py`, `AGENTS.md`, `WORKFLOW.md`, `coordination/README.md`, `coordination/WORKERS.md`, `jobright-automation-spec.md`, `review.md`
+- Public interfaces affected: User request/feedback Markdown contracts; `Task.source_type`, `Task.source_id`, `Task.completes_request`; request lifecycle and planner priority
+- Verification: Full suite passes (`28` tests); focused dev-loop intake/supervisor suite passes (`20` tests); Ruff and Black checks pass; JSON planner schema parses; `git diff --check` passes; intake smoke check loads REQ-005–REQ-010 with no eligible request because all are safely `proposed`.
+- Integration status: ready for commit and push
+- Commit SHA:
+- Checkpoint branch:
+- Handoff/risks: The pre-existing Coordinator timeout increase to 240 seconds is preserved and covered by the suite. It may cause a round to skip a fixed cadence boundary under high model latency; the supervisor prevents overlap and advances to the next boundary. User must review and approve seeded requests before product work is scheduled.

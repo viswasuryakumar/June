@@ -2,6 +2,19 @@
 
 ## 1. Overview
 
+### Source-of-truth hierarchy
+
+Approved files under `coordination/user/requests/` control product priority and user-visible intent.
+This engineering specification remains authoritative for architecture, shared contracts, state
+transitions, dependencies, and safety. Requests link to relevant epics instead of duplicating their
+technical rules. If a request conflicts with a safety or architecture invariant, automation stops
+until the user records a decision in `coordination/user/DECISIONS.md`.
+
+Product requests are not complete at technical merge: Codex records delivery state, and the user must
+submit `accepted` or `changes-required` feedback. Completed Epics 1–4 remain here as engineering
+history. Initial proposed requests REQ-005 through REQ-010 cover remaining Epics 5–9 and live
+JobRight verification gaps; they do not authorize implementation until the user marks them approved.
+
 **Goal:** An autonomous pipeline that, on a schedule, logs into jobright.ai (existing subscription), discovers newly matched jobs, selects the best candidates against user-defined criteria, triggers JobRight's resume tailoring for each selected job, and executes the application — either via JobRight's own Agent mode or by driving the JobRight Chrome extension on the external job/ATS site — while logging every step to a local tracker and pausing for human input only where required (CAPTCHA, ambiguous form questions, final-submit approval if enabled).
 
 **Non-goals (v1):**

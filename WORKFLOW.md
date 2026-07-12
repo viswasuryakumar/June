@@ -8,6 +8,8 @@ This file defines the standard workflow for every agent operating in this reposi
 - Review `coordination/WORKERS.md`, `coordination/claims/`, and the appropriate lane history (`PROGRESS.md` or `review.md`) to see what is owned, done, in progress, or blocked.
 - Confirm the task scope and expected output.
 - Create a task claim before making edits. Claims must list the exact files or directories to be changed and must not overlap another active claim.
+- Read approved user requests and latest feedback. Proposed, paused, and cancelled requests are not
+  implementation authority.
 
 ## 2. During Execution
 - Break the task into small steps.
@@ -26,7 +28,25 @@ This file defines the standard workflow for every agent operating in this reposi
 4. Codex applies each approved commit without committing, reruns its single bounded verification command, adds per-task evidence under `coordination/history/`, commits the integrated result, and pushes `main` sequentially.
 5. The supervisor records the round under `runs/devloop/` and waits for the next fixed boundary. Early completion never advances the cadence.
 
-## 3. Documentation Requirements
+Planning priority is: changes-required feedback; approved critical/high requests; checkpoints;
+critical/high review findings; approved medium/low requests; remaining spec work; bounded audit.
+Every task records `source_type`, `source_id`, and whether it completes its source request.
+
+## 3. User request lifecycle
+
+User-owned request content lives under `coordination/user/`; automation never edits it. Automation
+records task and delivery state separately under `coordination/state/`.
+
+`proposed → approved → planned → in-progress → technical-approved → delivered → accepted`
+
+- Only the user changes a request to `approved`, `paused`, or `cancelled`.
+- Codex may mark a final verified increment delivered, but only user feedback closes it as accepted.
+- `changes-required` feedback reopens the request at the highest planning priority.
+- A request/spec safety conflict stops planning until `DECISIONS.md` resolves it.
+- Every eight completed rounds, or after three failures/rejections in the active window, the system
+  writes a proposed workflow retrospective. Applying it requires explicit user approval.
+
+## 4. Documentation Requirements
 After every completed step, the agent must:
 - Claude updates `PROGRESS.md` with implementation/test outcomes and evidence; Codex never edits `PROGRESS.md`
 - Codex updates `review.md` with review activity, findings, correction requests, and E2E evidence
@@ -34,7 +54,7 @@ After every completed step, the agent must:
 - add or revise other relevant documentation only within the agent's assigned lane
 - note the method used, problems encountered, and how they were resolved
 
-## 4. Progress Log Format
+## 5. Progress Log Format
 Each Claude-authored progress note should include:
 - date/time
 - agent name
@@ -46,7 +66,7 @@ Each Claude-authored progress note should include:
 - status
 - verification notes
 
-## 5. Task Ownership by Agent Type
+## 6. Task Ownership by Agent Type
 - Foundation agent: scaffold repository structure, shared contracts, configs, and logging.
 - Auth agent: manage browser context, login flow, and session persistence.
 - Discovery agent: ingest jobs, enrich them, and persist job records.
@@ -59,7 +79,7 @@ Each Claude-authored progress note should include:
 
 These are runtime-component ownership areas, not contributor identities. Current contributor lanes and epic assignments are recorded in `coordination/WORKERS.md`; an assignment becomes active only when it has a corresponding claim.
 
-## 6. Handoff and Integration
+## 7. Handoff and Integration
 
 - A handoff includes the claim ID, changed files, public interfaces affected, verification commands/results, known risks, and required follow-up.
 - The worker closes its claim after publishing the handoff. Closed claims remain in place as short coordination evidence; detailed history belongs in `PROGRESS.md` or `review.md`.
@@ -68,7 +88,7 @@ These are runtime-component ownership areas, not contributor identities. Current
 - Timed-out work retains its checkpoint branch and is decomposed into a smaller continuation for a later round.
 - No agent force-pushes. A rejected integration or remote update blocks the task until a fresh preflight and review.
 
-## 7. Definition of Done
+## 8. Definition of Done
 A task is done only when:
 - implementation is complete
 - verification was performed

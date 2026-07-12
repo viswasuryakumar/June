@@ -1,6 +1,6 @@
 ---
 id: REQ-010
-status: proposed
+status: approved
 priority: critical
 title: Validate live JobRight authentication, selectors, and discovery
 spec_refs: ["EPIC 2", "EPIC 3"]

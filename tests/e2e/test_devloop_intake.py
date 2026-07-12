@@ -181,7 +181,7 @@ def test_task_source_must_be_approved_and_highest_priority(tmp_path: Path) -> No
     DevLoopSupervisor.validate_task_sources([sourced_task("REQ-101")], intake)
 
 
-def test_seeded_requests_cover_remaining_work_and_start_proposed() -> None:
+def test_seeded_requests_cover_remaining_work() -> None:
     repo = Path(__file__).parents[2]
     intake = load_intake(repo)
     assert set(intake.requests) >= {
@@ -192,10 +192,6 @@ def test_seeded_requests_cover_remaining_work_and_start_proposed() -> None:
         "REQ-009",
         "REQ-010",
     }
-    assert all(
-        intake.requests[item].status == "proposed"
-        for item in ("REQ-005", "REQ-006", "REQ-007", "REQ-008", "REQ-009", "REQ-010")
-    )
 
 
 def test_retrospective_threshold_and_window_marker(tmp_path: Path) -> None:

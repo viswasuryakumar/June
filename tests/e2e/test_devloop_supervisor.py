@@ -104,6 +104,23 @@ def test_verification_command_is_allowlisted(tmp_path: Path) -> None:
         supervisor._verification_argv("rm -rf runs")
 
 
+def test_coordinator_uses_noninteractive_read_only_structured_output() -> None:
+    captured: list[str] = []
+
+    def runner(
+        argv: list[str] | tuple[str, ...], cwd: Path, timeout: float | None
+    ) -> subprocess.CompletedProcess[str]:
+        captured.extend(argv)
+        return subprocess.CompletedProcess(argv, 0, '{"structured_output":{"tasks":[]}}', "")
+
+    supervisor = DevLoopSupervisor(config(Path.cwd()), command_runner=runner)
+
+    assert supervisor._plan_with_claude("round-1") == []
+    assert captured[captured.index("--permission-mode") + 1] == "default"
+    assert captured[captured.index("--output-format") + 1] == "json"
+    assert "--json-schema" in captured
+
+
 def test_dry_run_plans_without_requiring_clean_tree(tmp_path: Path) -> None:
     repo = initialized_repo(tmp_path)
     (repo / "local-note.txt").write_text("uncommitted\n", encoding="utf-8")

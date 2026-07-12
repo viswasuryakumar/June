@@ -1,7 +1,7 @@
 ---
 name: coordinator
 description: Plans one bounded developer task and one bounded bug-fixer task for a 15-minute round.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: sonnet
 ---
 

@@ -266,7 +266,7 @@ class DevLoopSupervisor:
                 "--agent",
                 "coordinator",
                 "--permission-mode",
-                "plan",
+                "default",
                 "--output-format",
                 "json",
                 "--json-schema",

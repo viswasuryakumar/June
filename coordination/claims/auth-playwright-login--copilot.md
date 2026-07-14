@@ -1,0 +1,29 @@
+# Task claim
+
+- Claim ID: auth-playwright-login
+- Worker: Copilot
+- Contributor lane: implementation
+- Runtime epic/component: Auth
+- Status: active
+- Started (UTC): 2026-07-13
+- Round ID: local
+- Deadline: 2026-07-13
+- Parent task: login through JobRight credentials with Playwright
+- Branch: local
+- Worktree: c:\Users\018316532\June
+- Dependencies: existing auth modules and selector registry
+- Files/directories claimed:
+  - src/auth/
+  - selectors/jobright.yaml
+  - tests/test_auth_login.py
+- Public interfaces affected:
+  - src.auth.login.login
+  - src.auth.login.login_with_credentials
+  - src.auth.session.SessionManager
+- Verification:
+  - pytest for auth login tests
+- Integration status: pending
+- Commit SHA:
+- Checkpoint branch:
+- Handoff/risks:
+  - Live JobRight credentials are not available in this environment, so verification uses Playwright fixture pages and the existing selector-based contract.

@@ -21,8 +21,8 @@ from dotenv import load_dotenv
 
 from src.contracts.exceptions import SecretsError
 
-REQUIRED_ENV_VARS = ("JOBRIGHT_EMAIL", "JOBRIGHT_PASSWORD")
-OPTIONAL_ENV_VARS = ("JOBRIGHT_SSO", "NOTIFIER_SLACK_WEBHOOK_URL", "NOTIFIER_TELEGRAM_TOKEN")
+REQUIRED_ENV_VARS = ("JOBRIGHT_EMAIL",)
+OPTIONAL_ENV_VARS = ("JOBRIGHT_PASSWORD", "JOBRIGHT_SSO", "NOTIFIER_SLACK_WEBHOOK_URL", "NOTIFIER_TELEGRAM_TOKEN")
 
 
 @dataclass(frozen=True)
@@ -62,6 +62,11 @@ def load_secrets(env_file: str | None = ".env", *, require: bool = True) -> Secr
             "missing required secret(s): "
             + ", ".join(missing)
             + ". Set them as environment variables (see .env.example)."
+        )
+
+    if require and not os.environ.get("JOBRIGHT_PASSWORD") and not os.environ.get("JOBRIGHT_SSO"):
+        raise SecretsError(
+            "either JOBRIGHT_PASSWORD or JOBRIGHT_SSO must be set for login."
         )
 
     return Secrets(

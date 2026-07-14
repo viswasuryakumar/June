@@ -285,6 +285,28 @@ def test_login_sso_detected_opens_hitl_ticket_and_does_not_submit_credentials(
     page.close()
 
 
+def test_login_sso_prefills_google_email_and_hands_off_without_password(
+    tmp_path, monkeypatch, browser
+):
+    monkeypatch.chdir(tmp_path)
+    page = browser.new_page()
+    page.goto(
+        "data:text/html,<html><body>"
+        "<button id='sso-google' onclick=\"document.body.innerHTML = '<div><input type=\'email\' name=\'email\' /></div>';\">"
+        "Continue with Google</button>"
+        "</body></html>"
+    )
+    secrets = make_secrets(jobright_sso=True, jobright_password="")
+    tracker = InMemoryTrackerRepository()
+
+    outcome = login(page, REGISTRY, secrets, tracker, "run-login-sso-prefill")
+
+    assert outcome.status == "hitl_pending"
+    assert page.locator("input[type='email']").input_value() == "a@example.com"
+    assert tracker.list_tickets()[0].context["reason"] == "sso_google_detected"
+    page.close()
+
+
 def test_login_challenge_screen_detected_opens_hitl_ticket(tmp_path, monkeypatch, browser):
     monkeypatch.chdir(tmp_path)
     page = browser.new_page()

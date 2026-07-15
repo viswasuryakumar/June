@@ -115,6 +115,30 @@ resume:
   # and intercepts clicks on everything behind it until dismissed - any
   # automation driving this drawer needs to check for and close it first.
   survey_nudge_close_button: "button[aria-label=Close]"
+  # The tailoring drawer's own X close control. Per the user's live
+  # observation (2026-07-15): for a job whose resume is already tailored,
+  # the correct flow is X-close this drawer, then click the header's
+  # APPLY WITH AUTOFILL - pressing Escape instead closes the entire job
+  # overlay back to the feed. Probed live 2026-07-15: it is a bare <div>
+  # (not an Ant .ant-drawer-close button) with CSS-module classes
+  # `index_custom-drawer-close__* index_tailor-resume-drawer-close__*`;
+  # matching the semantic substring survives hash rotation.
+  drawer_close_button: '[class*="tailor-resume-drawer-close"]'
+
+extension:
+  # JobRight browser extension ("Jobright Autofill", id
+  # odcnpipkhjegpefkfplmedhmkmmhmoko, located installed locally
+  # 2026-07-14 under the user's Chrome profiles). Its content script
+  # injects an autofill affordance on external ATS pages; that UI has
+  # NOT been observed live yet, so this key is a placeholder. When
+  # present, src/executor/extension.py:trigger_extension_autofill()
+  # tries this key first, before its built-in candidate guesses -
+  # Verified live 2026-07-15 on jobs.lever.co with the panel open: the
+  # trigger is the big green button whose exact text is "Autofill",
+  # rendered in the page's main frame (open shadow DOM - normal locators
+  # pierce it). Exact-text regex on purpose: the panel also contains
+  # "Autofill for Another Job" and "Your Autofill Information".
+  autofill_trigger: 'text=/^\s*Autofill\s*$/'
 
 apply:
   # Verified live 2026-07-13 on the same job detail page: a real, stable
@@ -127,7 +151,13 @@ apply:
   # still unverified
   # and this key may need a second real value once that variant is seen.
   agent_button: "#apply-now-button-id"
-  extension_autofill_button: "[data-testid=extension-autofill]"  # PLACEHOLDER - "APPLY WITH AUTOFILL" variant seen on feed cards but not yet inspected on its own detail page
+  # Verified live 2026-07-15 on a real job detail overlay (Field Nation /
+  # jobs/info/6a56ced210c4d945d864c0e5): jobs whose apply path goes through
+  # the browser extension show this header button instead of APPLY NOW.
+  # Clicking it opens the external company/ATS posting in a new tab where
+  # the extension's own autofill UI takes over. Text selector on purpose -
+  # the button carries no stable id/class.
+  extension_autofill_button: 'text="APPLY WITH AUTOFILL"'
   # Reused (not added) by Epic 3's job-detail enrichment (T3.2.2) to
   # determine `apply_mode`: agent_button present -> "agent",
   # extension_autofill_button present -> "extension", else if an

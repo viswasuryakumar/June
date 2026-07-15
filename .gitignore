@@ -8,6 +8,10 @@ __pycache__/
 
 # Secrets - never commit
 .env
+config/secrets.yaml
+
+# Runtime-writable personal application data (learned answers, real PII)
+config/application_data.yaml
 
 # Runtime artifacts (screenshots, HTML dumps, logs per run)
 runs/*

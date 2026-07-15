@@ -87,6 +87,52 @@ def detect_challenge_screen(
     )
 
 
+def _trigger_google_sso(
+    page,
+    registry: SelectorRegistry,
+    secrets: Secrets,
+    *,
+    run_id: str,
+    timeout_ms: int = 8000,
+) -> bool:
+    """Trigger Google SSO if the page exposes the SSO affordance.
+
+    When the login page offers a Google sign-in button, click it and then
+    try to prefill the user's email on any Google-style email field. The
+    flow still stops at a HITL handoff for the actual Google password/2FA
+    step, since those are intentionally human-mediated in this project.
+    """
+    try:
+        resolve_locator(
+            page, registry, "login.sso_google_button", run_id=run_id, timeout_ms=timeout_ms
+        ).click()
+    except Exception:
+        return False
+
+    try:
+        page.wait_for_load_state("domcontentloaded", timeout=timeout_ms)
+    except Exception:
+        pass
+
+    if not secrets.jobright_email:
+        return True
+
+    for selector in (
+        "input[type='email']",
+        "input[name='email']",
+        "input[autocomplete='email']",
+        "input[id*='email']",
+    ):
+        try:
+            locator = page.locator(selector).first
+            if locator.count() > 0:
+                locator.fill(secrets.jobright_email)
+                return True
+        except Exception:
+            continue
+    return True
+
+
 def _safe_page_url(page) -> str | None:
     try:
         return page.url
@@ -226,8 +272,14 @@ def login(
         log_event(logger, "login_attempt_start", run_id=run_id, job_id=job_id)
 
     if sso_detected(page, registry, secrets, run_id=run_id):
+        _trigger_google_sso(page, registry, secrets, run_id=run_id, timeout_ms=timeout_ms)
         return open_login_hitl_ticket(
-            tracker, page, run_id, reason="sso_google_detected", job_id=job_id, logger=logger
+            tracker,
+            page,
+            run_id,
+            reason="sso_google_detected",
+            job_id=job_id,
+            logger=logger,
         )
 
     if detect_challenge_screen(page, registry, run_id=run_id):

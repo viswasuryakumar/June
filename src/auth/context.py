@@ -88,6 +88,7 @@ def launch_persistent_context(config: BrowserContextConfig, playwright):
         # headlessness is expressed via the `--headless=new` arg (see
         # build_launch_args), not this kwarg - see its docstring for why.
         headless=False,
+        accept_downloads=True,  # let the executor capture resume PDF downloads
         viewport=config.viewport,
         timezone_id=config.timezone_id,
         locale=config.locale,

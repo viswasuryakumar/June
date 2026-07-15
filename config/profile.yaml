@@ -3,33 +3,36 @@
 # Fill in your real details before Epic 6 (executor) goes live. Values here
 # are placeholders and contain no real personal data.
 
-full_name: "Jane Doe"
-email: "jane.doe@example.com"
-phone: "+1-555-0100"
-linkedin_url: "https://www.linkedin.com/in/example"
+full_name: "Viswa Surya Kumar Suvvada"
+email: "viswasuryakumarsuvvada@gmail.com"
+phone: "+1 669-292-6876"
+# TODO(user): replace with your real LinkedIn profile URL — left null so
+# forms don't get the "example" placeholder typed into them.
+linkedin_url: null
 portfolio_url: null
 
 address:
-  street: ""
-  city: ""
-  state: ""
-  postal_code: ""
-  country: ""
+  street: "1326 The Alameda"
+  city: "San Jose"
+  state: "CA"
+  postal_code: "95126"
+  country: "USA"
 
-work_authorized: "decline_to_answer"
-requires_sponsorship: "decline_to_answer"
-notice_period_days: 14
+# schema requires lowercase yes/no/decline_to_answer (src/config/profile.py)
+work_authorized: "yes"
+requires_sponsorship: "yes"
+notice_period_days: 0
 
 salary_expectation:
-  minimum: 120000
-  maximum: 160000
+  minimum: 70000
+  maximum: 100000
   currency: "USD"
 
 eeo_self_id:
-  gender: "decline_to_answer"
-  race_ethnicity: "decline_to_answer"
-  veteran_status: "decline_to_answer"
-  disability_status: "decline_to_answer"
+  gender: "Male"
+  race_ethnicity: "Asian"
+  veteran_status: "no"   # rendered as "No"/"Not a veteran" option match in forms
+  disability_status: "no"
 
 # Free-text Q&A knowledge snippets consumed by the executor's question
 # matcher (Epic 6, T6.1.3 / T6.2.3) for application-form free-text fields.

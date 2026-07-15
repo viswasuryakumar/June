@@ -1,0 +1,32 @@
+# Task claim
+
+- Claim ID: e6-executor-post-apply
+- Worker: Claude (interactive session)
+- Contributor lane: implementation
+- Runtime epic/component: Executor (Epic 6)
+- Status: active
+- Started (UTC): 2026-07-14
+- Round ID: local
+- Deadline: 2026-07-14
+- Parent task: post-apply-click handling — user request: (1) LinkedIn redirect with human-typed credentials then automated field filling, (2) company ATS pages via JobRight extension autofill + verification against stored application data, (3) native fill from stored application data where the extension does not work; plus multi-page navigation and unfilled-field error fixing on every path
+- Branch: feat/live-jobright-verification
+- Worktree: c:\Users\018316532\June
+- Dependencies: src/auth/context.py (persistent context + extension loading), src/config/profile.py, src/observability/selectors.py, tracker
+- Files/directories claimed:
+  - src/executor/
+  - config/application_data.yaml (new runtime-writable answer store)
+  - selectors/jobright.yaml (additive `extension:` keys only — note: overlaps the stale-active `auth-playwright-login--copilot` claim, same as the prior 2026-07-13 session; only new keys are added, no existing key edited)
+  - tests/unit/test_executor_*.py
+- Public interfaces affected:
+  - src.executor.application_data.ApplicationDataStore
+  - src.executor.forms (audit_form_fields, fill_missing_fields, run_fill_loop)
+  - src.executor.routing.classify_apply_destination
+  - src.executor.extension (find_installed_jobright_extension, trigger_extension_autofill)
+  - src.executor.run_apply (interactive headed driver)
+- Verification:
+  - pytest tests/unit/test_executor_*.py + full suite; ruff/black
+- Integration status: pending
+- Commit SHA:
+- Checkpoint branch:
+- Handoff/risks:
+  - ATS-specific and LinkedIn Easy Apply selectors are heuristic until verified in a live supervised run; the extension's injected autofill UI has never been observed and its selector keys start as placeholders.

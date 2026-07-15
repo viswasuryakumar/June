@@ -11,11 +11,31 @@
 # file current as the source of truth (one agent owns this file).
 
 login:
-  email_input: "#email"           # PLACEHOLDER - verify against live login form
-  password_input: "#password"     # PLACEHOLDER
-  submit_button: "button[type=submit]"  # PLACEHOLDER
-  sso_google_button: "button[data-provider=google]"  # PLACEHOLDER
-  dashboard_indicator: "[data-testid=user-avatar]"    # PLACEHOLDER - proves logged-in state
+  # sign_in_button/email_input/password_input/submit_button/sso_google_button
+  # verified live against https://jobright.ai on 2026-07-13 via a headless
+  # Playwright inspection pass (navigate -> click nav "SIGN IN" -> read the
+  # opened modal's DOM). Values below are the real, current markup, not
+  # placeholders - JobRight's frontend is a Next.js/Ant Design app whose
+  # CSS-module class names may change across their deploys, so these
+  # selectors deliberately avoid hashed class names in favor of visible
+  # text/attribute selectors where possible; re-verify if login automation
+  # starts failing after a JobRight frontend update.
+  sign_in_button: 'text="SIGN IN"'   # nav-bar link; opens the sign-in modal (only one match before the modal is open)
+  email_input: "#basic_email"
+  password_input: "#basic_password"
+  submit_button: "form#basic button[type=submit]"
+  # The modal's "Sign in with Google" control is a cross-origin Google
+  # Identity Services button embed (an <iframe>), not a plain button.
+  # Clicking the outer <iframe> element with a normal Playwright .click()
+  # still reaches the button rendered inside it (verified live) and opens
+  # a real accounts.google.com OAuth popup window - the popup is where a
+  # human must enter Google credentials; this project never automates
+  # that step (see src/auth/login.py's module docstring).
+  sso_google_button: 'iframe[title="Sign in with Google Button"]'
+  # Verified live 2026-07-13 against a real logged-in account (the header
+  # profile link that only renders once authenticated); replaces the
+  # never-testable [data-testid=user-avatar] placeholder.
+  dashboard_indicator: 'a[aria-label="Go to profile"]'
   # Added by Epic 2 (auth) owner: generic 2FA/OTP/email-verification
   # challenge-screen indicator (spec S2.2.3). No live challenge screen has
   # ever been observed (no credentials in this environment) - this key is
@@ -25,34 +45,119 @@ login:
   challenge_indicator: "[data-testid=login-challenge]"  # PLACEHOLDER
 
 jobs:
-  card: "[data-testid=job-card]"          # PLACEHOLDER
-  match_score: "[data-testid=match-score]"  # PLACEHOLDER
-  title: "[data-testid=job-title]"        # PLACEHOLDER
-  company: "[data-testid=job-company]"    # PLACEHOLDER
+  # card/title/company/location/posted_at/match_score/card_link verified
+  # live 2026-07-13 against https://jobright.ai/jobs/recommend (a real
+  # logged-in account, 8 cards inspected). `.job-card-flag-classname` is a
+  # deliberate non-hashed marker class (unlike JobRight's CSS-module
+  # classes, which look like `index_x__Hash` and may rotate on deploy) -
+  # prefer it over the hashed ones anywhere a stable anchor is available.
+  card: ".job-card-flag-classname"
+  title: ".index_job-title__Riiip"
+  company: ".index_company-name__jnxCX"
+  location: ".index_primary-location__szO4T"
+  posted_at: ".index_publish-time__iYAbR"
+  match_score: ".index_percent-value__e9Uef"
   # Added by Epic 3 (discovery) owner - see src/discovery/*.py.
   # `feed_url` is deliberately not a CSS selector: it's the jobs feed
   # entry-point URL (S3.1.1), reusing the same centralized semantic-key
   # registry mechanism spec §3.3 mandates for "all selectors" so this
   # entry point isn't hardcoded in src/discovery/feed.py either.
-  feed_url: "https://jobright.ai/jobs/recommended"  # PLACEHOLDER - not a CSS selector, see note above
+  # Verified live 2026-07-13: a logged-in visit to https://jobright.ai
+  # redirects to /jobs/recommend (no trailing "ed") - the prior placeholder
+  # ("/jobs/recommended") was wrong, not just unverified.
+  feed_url: "https://jobright.ai/jobs/recommend"  # verified live, not a CSS selector, see note above
   # Structural container for the whole feed - if this never resolves via
   # resolve_locator(), that IS a genuine SelectorBroken (the jobs page
   # layout changed / failed to load), unlike a card-level field being
   # absent (see src/discovery/extraction.py).
-  feed_container: "[data-testid=jobs-feed]"  # PLACEHOLDER
-  card_link: "a[data-testid=job-card-link]"   # PLACEHOLDER - href source for job_id (see extraction.py:derive_job_id)
-  location: "[data-testid=job-location]"      # PLACEHOLDER
+  # Verified live 2026-07-13: the real card list's own div has no stable
+  # class, but its parent (one level up from each card's row wrapper) is
+  # uniquely selectable via :has() and resolves to exactly 1 match.
+  feed_container: "div:has(> div > .job-card-flag-classname)"
+  # Both anchors inside a card point at the same job detail URL
+  # (`/jobs/info/<id>`, not the `/jobs/<id>` pattern Epic 3 assumed) -
+  # verified live; `derive_job_id()`'s "last href path segment" rule still
+  # holds against the real URL shape.
+  card_link: 'a[href*="/jobs/info/"]'
+  # STILL PLACEHOLDER: verified live that there is no dedicated salary
+  # element - salary (when present) is plain text inside the generic
+  # metadata row alongside job-type/experience-level, matching how
+  # extraction.py already regex-parses that row rather than expecting a
+  # distinct field. `.index_job-metadata-row__JDyLA` is the real container
+  # if a future pass wants to scope the regex to it specifically.
   salary: "[data-testid=job-salary]"           # PLACEHOLDER
-  posted_at: "[data-testid=job-posted-at]"     # PLACEHOLDER
-  detail_description: "[data-testid=job-description]"        # PLACEHOLDER
-  detail_external_link: "a[data-testid=external-apply-link]"  # PLACEHOLDER
+  detail_description: "[data-testid=job-description]"        # PLACEHOLDER - not yet verified (requires opening a real job detail page)
+  detail_external_link: "a[data-testid=external-apply-link]"  # PLACEHOLDER - not yet verified
 
 resume:
-  tailor_button: "[data-testid=tailor-resume]"  # PLACEHOLDER
+  # Verified live 2026-07-13 on a real job detail page
+  # (https://jobright.ai/jobs/info/<id>): a stable, deliberate tutorial
+  # attribute (not a hashed CSS-module class) marks the "Customize Your
+  # Resume" panel entry. Clicking it opens JobRight's own multi-step
+  # "Generate Your Custom Resume" drawer (id
+  # `index_tailor-resume-drawer-container-id__1wWB8`) - JobRight generates
+  # the tailored resume itself; this project does not need to build a
+  # generator, only drive this button and the drawer's own
+  # "Improve My Resume for This Job" CTA. Drawer internals (its 3 steps'
+  # own buttons/fields) are not yet selector-mapped - the drawer was only
+  # opened and read, not driven through to completion, since finishing it
+  # produces a real resume variant on the user's live account.
+  tailor_button: '[data-tut="job-info-tailor-section"]'
+  # Verified live 2026-07-13, end to end: opening the drawer for a job that
+  # already has a generated resume skips straight past step 1/2 to step 3
+  # ("Review Your New Resume") - idempotent, does not regenerate. This is
+  # that step's download control (an ant-dropdown-trigger - clicking it
+  # likely opens a format-choice menu (PDF/DOCX), not an immediate direct
+  # download; not yet confirmed which).
+  download_button: ".index_download-button__qaBr8"
+  # A close survey-nudge modal (`button[aria-label=Close]` inside
+  # `.ant-modal-wrap`) can appear after "Improve My Resume for This Job"
+  # and intercepts clicks on everything behind it until dismissed - any
+  # automation driving this drawer needs to check for and close it first.
+  survey_nudge_close_button: "button[aria-label=Close]"
+  # The tailoring drawer's own X close control. Per the user's live
+  # observation (2026-07-15): for a job whose resume is already tailored,
+  # the correct flow is X-close this drawer, then click the header's
+  # APPLY WITH AUTOFILL - pressing Escape instead closes the entire job
+  # overlay back to the feed. Probed live 2026-07-15: it is a bare <div>
+  # (not an Ant .ant-drawer-close button) with CSS-module classes
+  # `index_custom-drawer-close__* index_tailor-resume-drawer-close__*`;
+  # matching the semantic substring survives hash rotation.
+  drawer_close_button: '[class*="tailor-resume-drawer-close"]'
+
+extension:
+  # JobRight browser extension ("Jobright Autofill", id
+  # odcnpipkhjegpefkfplmedhmkmmhmoko, located installed locally
+  # 2026-07-14 under the user's Chrome profiles). Its content script
+  # injects an autofill affordance on external ATS pages; that UI has
+  # NOT been observed live yet, so this key is a placeholder. When
+  # present, src/executor/extension.py:trigger_extension_autofill()
+  # tries this key first, before its built-in candidate guesses -
+  # Verified live 2026-07-15 on jobs.lever.co with the panel open: the
+  # trigger is the big green button whose exact text is "Autofill",
+  # rendered in the page's main frame (open shadow DOM - normal locators
+  # pierce it). Exact-text regex on purpose: the panel also contains
+  # "Autofill for Another Job" and "Your Autofill Information".
+  autofill_trigger: 'text=/^\s*Autofill\s*$/'
 
 apply:
-  agent_button: "[data-testid=apply-with-agent]"     # PLACEHOLDER
-  extension_autofill_button: "[data-testid=extension-autofill]"  # PLACEHOLDER
+  # Verified live 2026-07-13 on the same job detail page: a real, stable
+  # `id` attribute (not a hashed class); confirmed the same id/button is
+  # reused verbatim on the "Review Your New Resume" step of the tailoring
+  # drawer, so this one key covers both entry points. Only one apply-button
+  # variant has been observed so far ("APPLY NOW") - the jobs feed shows at
+  # least one other label ("APPLY WITH AUTOFILL") on other cards that
+  # hasn't been inspected yet, so `extension_autofill_button` below is
+  # still unverified
+  # and this key may need a second real value once that variant is seen.
+  agent_button: "#apply-now-button-id"
+  # Verified live 2026-07-15 on a real job detail overlay (Field Nation /
+  # jobs/info/6a56ced210c4d945d864c0e5): jobs whose apply path goes through
+  # the browser extension show this header button instead of APPLY NOW.
+  # Clicking it opens the external company/ATS posting in a new tab where
+  # the extension's own autofill UI takes over. Text selector on purpose -
+  # the button carries no stable id/class.
+  extension_autofill_button: 'text="APPLY WITH AUTOFILL"'
   # Reused (not added) by Epic 3's job-detail enrichment (T3.2.2) to
   # determine `apply_mode`: agent_button present -> "agent",
   # extension_autofill_button present -> "extension", else if an
